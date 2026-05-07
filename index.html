@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Simulation | Conservation of Energy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --primary: #3b82f6;
+            --secondary: #64748b;
+            --text-main: #1e293b;
+            --accent: #0ea5e9;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+
+        header { text-align: center; margin-bottom: 40px; }
+        .uni-tag { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: block; }
+        h1 { font-size: 32px; font-weight: 800; color: var(--text-main); letter-spacing: -1px; }
+        
+        .team-section { 
+            margin-top: 15px; 
+            padding: 10px; 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            border-radius: 30px; 
+            display: inline-block;
+            font-size: 13px;
+            color: var(--secondary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .team-section b { color: var(--primary); }
+
+        .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 30px; margin-top: 20px; }
+        @media (max-width: 800px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 20px; 
+            padding: 25px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+        }
+
+        .label-sm { font-size: 11px; font-weight: 700; color: var(--secondary); text-transform: uppercase; margin-bottom: 15px; display: block; }
+
+        .input-box { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        input { 
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+            background: #f1f5f9; font-family: 'JetBrains Mono'; font-size: 15px; outline: none;
+        }
+        input:focus { border-color: var(--primary); background: #fff; }
+
+        .btn-calc { 
+            width: 100%; padding: 15px; background: var(--primary); color: white; border: none;
+            border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .btn-calc:hover { background: #2563eb; transform: translateY(-2px); }
+
+        /* Simulation Box */
+        .sim-view { 
+            background: #ffffff; border-radius: 20px; border: 1px solid var(--border);
+            height: 400px; position: relative; overflow: hidden;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        canvas { width: 100%; height: 100%; }
+
+        /* Real-time stats overlay */
+        .live-panel {
+            position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9);
+            padding: 15px; border-radius: 12px; border: 1px solid var(--border); font-family: 'JetBrains Mono';
+            font-size: 12px; backdrop-filter: blur(4px);
+        }
+
+        /* Results Modal (The Report) */
+        .modal { 
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); 
+            display: none; align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-content { 
+            background: white; width: 90%; max-width: 550px; padding: 35px; border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2); animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .report-step { margin-bottom: 20px; padding-left: 15px; border-left: 3px solid var(--primary); }
+        .report-step h4 { font-size: 14px; margin-bottom: 5px; color: var(--text-main); }
+        .report-step p { font-size: 13px; color: var(--secondary); }
+        .formula-box { background: #f8fafc; padding: 10px; border-radius: 8px; font-family: 'JetBrains Mono'; font-size: 13px; margin-top: 5px; color: var(--primary); }
+
+        .close-btn { background: #f1f5f9; color: var(--text-main); padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span class="uni-tag">AI-Powered Physics Lab</span>
+        <h1>Mechanical Energy Simulator</h1>
+        <div class="team-section">
+            Project by: <b>Bayan Mohammed, Layan Mohammed, Ruqayah Radhi, Ruaa Abdulsalam, Dana Jamal</b>
+        </div>
+    </header>
+
+    <div class="main-grid">
+        <div class="card">
+            <span class="label-sm">Experiment Settings</span>
+            <div class="input-box">
+                <label>Mass (m)</label>
+                <input type="number" id="mass" value="5">
+            </div>
+            <div class="input-box">
+                <label>Initial Height (h)</label>
+                <input type="number" id="height" value="5.1">
+            </div>
+            <button class="btn-calc" onclick="runSimulation()">Start Simulation</button>
+
+            <div style="margin-top: 30px;">
+                <span class="label-sm">Energy Monitor</span>
+                <div style="font-size: 13px; margin-bottom: 8px;">Potential Energy: <b id="pe-val" style="color:var(--primary)">0 J</b></div>
+                <div style="font-size: 13px;">Kinetic Energy: <b id="ke-val" style="color:var(--accent)">0 J</b></div>
+            </div>
+        </div>
+
+        <div class="sim-view">
+            <div class="live-panel">
+                <div id="l-v">Velocity: 0.00 m/s</div>
+                <div id="l-h">Height: 0.00 m</div>
+            </div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="reportModal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 20px; font-size: 22px;">AI Physics Analysis</h2>
+        <div id="reportData"></div>
+        <button class="close-btn" onclick="document.getElementById('reportModal').style.display='none'">Close Report</button>
+    </div>
+</div>
+
+<script>
+let animationFrame = null;
+const g = 9.8;
+
+function runSimulation() {
+    const m = parseFloat(document.getElementById('mass').value);
+    const h = parseFloat(document.getElementById('height').value);
+    
+    if(m <= 0 || h <= 0) return alert("Please enter positive values");
+
+    const initialPE = m * g * h;
+    const finalV = Math.sqrt(2 * g * h);
+
+    // Start visual simulation
+    animatePhysics(m, h, initialPE, finalV);
+    
+    // Prep the explanation report
+    prepareReport(m, h, initialPE, finalV);
+}
+
+function prepareReport(m, h, pe, v) {
+    const container = document.getElementById('reportData');
+    container.innerHTML = `
+        <div class="report-step">
+            <h4>1. Initial Potential Energy</h4>
+            <p>At height ${h}m, the object stores maximum potential energy.</p>
+            <div class="formula-box">PE = mgh = ${m} × 9.8 × ${h} = ${pe.toFixed(2)} J</div>
+        </div>
+        <div class="report-step">
+            <h4>2. Energy Conversion Process</h4>
+            <p>During the fall, the energy transforms. Total Energy (E) remains constant at ${pe.toFixed(2)} J.</p>
+        </div>
+        <div class="report-step">
+            <h4>3. Impact Velocity (Result)</h4>
+            <p>Using Conservation of Energy: mgh = 1/2 mv²</p>
+            <div class="formula-box">v = √(2gh) = √(2 × 9.8 × ${h}) = ${v.toFixed(2)} m/s</div>
+        </div>
+    `;
+    // Show report after 2 seconds (when sim finishes)
+    setTimeout(() => { document.getElementById('reportModal').style.display = 'flex'; }, 2500);
+}
+
+function animatePhysics(m, h, totalE, vFinal) {
+    const cvs = document.getElementById('mainCanvas');
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width = cvs.offsetWidth;
+    const H = cvs.height = cvs.offsetHeight;
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+
+    let start = null;
+    const fallDuration = Math.sqrt(2 * h / g);
+
+    function draw(ts) {
+        if (!start) start = ts;
+        let t = (ts - start) / 1000;
+        if (t > fallDuration) t = fallDuration;
+
+        const currentH = Math.max(0, h - (0.5 * g * t * t));
+        const currentV = g * t;
+        const currentPE = m * g * currentH;
+        const currentKE = totalE - currentPE;
+
+        // Update Text UI
+        document.getElementById('pe-val').textContent = currentPE.toFixed(1) + ' J';
+        document.getElementById('ke-val').textContent = currentKE.toFixed(1) + ' J';
+        document.getElementById('l-v').textContent = `Velocity: ${currentV.toFixed(2)} m/s`;
+        document.getElementById('l-h').textContent = `Height: ${currentH.toFixed(2)} m`;
+
+        // Draw Simulation
+        ctx.clearRect(0,0,W,H);
+        
+        // Ground line
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(40, H-40); ctx.lineTo(W-40, H-40); ctx.stroke();
+
+        // Object (Ball)
+        const yPos = 40 + ((h - currentH) / h) * (H - 100);
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath(); ctx.arc(W/2, yPos, 15, 0, Math.PI*2); ctx.fill();
+        
+        // Shadow/Indicator
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+        ctx.beginPath(); ctx.arc(W/2, H-40, 15 * (1 - (currentH/h)), 0, Math.PI*2); ctx.fill();
+
+        if (t < fallDuration) animationFrame = requestAnimationFrame(draw);
+    }
+    animationFrame = requestAnimationFrame(draw);
+}
+
+// Initial Run
+window.onload = runSimulation;
+</script>
+
+</body>
+</html>
